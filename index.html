@@ -295,14 +295,12 @@
             }, 500);
         });
 
-        // --- 5. BOT RESPONSE LOGIC (CALLS YOUR BACKEND) ---
+        // --- 5. BOT RESPONSE LOGIC (ROBUST VERSION) ---
         async function getBotResponse(userInput) {
-            // =================================================================
-            // === IMPORTANT: PASTE YOUR LIVE RENDER URL IN THE LINE BELOW ===
-            // =================================================================
             const API_URL = 'https://talkbuddy-vzwv.onrender.com/ask';
 
             try {
+                console.log("Attempting to fetch from:", API_URL);
                 const response = await fetch(API_URL, {
                     method: 'POST',
                     headers: {
@@ -313,17 +311,25 @@
                     }),
                 });
 
-                if (!response.ok) {
-                    const errData = await response.json();
-                    throw new Error(errData.error || `Server error: ${response.status}`);
+                // Check if the response was successful (status code 200-299)
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log("Received successful response:", data);
+                    return data.reply;
+                } else {
+                    // If the response is not OK, handle it as an error
+                    console.error("Server responded with an error status:", response.status, response.statusText);
+                    // Try to get more specific error text from the response body
+                    const errorText = await response.text(); // Read as text first
+                    console.error("Error response body:", errorText);
+                    // Throw an error to be caught by the catch block
+                    throw new Error(`Server Error: ${response.status} - ${errorText}`);
                 }
-                
-                const data = await response.json();
-                return data.reply;
 
             } catch (error) {
-                console.error("Error calling backend:", error);
-                return "I'm having trouble connecting. Please check the server and the console for errors.";
+                // This will catch network errors or errors thrown from the try block
+                console.error("An error occurred in getBotResponse:", error);
+                return "Sorry, I'm having trouble connecting right now. Please check the console for details.";
             }
         }
     </script>
