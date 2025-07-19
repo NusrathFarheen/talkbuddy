@@ -21,10 +21,12 @@ app.use(express.json());
 
 // --- 3. GEMINI API CONFIGURATION ---
 const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
-// UPDATED MODEL NAME: Changed "gemini-pro" to the current standard "gemini-1.0-pro"
-const model = genAI.getGenerativeModel({ model: "gemini-1.0-pro" });
+// ===================================================================
+// === FINAL FIX: Using the latest recommended model name ===
+// ===================================================================
+const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
-// --- 4. API ENDPOINT (Back to POST) ---
+// --- 4. API ENDPOINT ---
 app.post('/ask', async (req, res) => {
     const { message } = req.body;
     if (!message) {
