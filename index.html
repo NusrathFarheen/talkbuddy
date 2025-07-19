@@ -188,6 +188,7 @@
         document.addEventListener('DOMContentLoaded', () => {
             const micButton = document.getElementById('mic-button');
             const chatWindow = document.getElementById('chat-window');
+            let initialGreetingSpoken = false;
 
             // --- 1. SPEECH-TO-TEXT (SpeechRecognition) SETUP ---
             const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -228,7 +229,7 @@
                 return messageElement;
             }
             
-            function speak(text) {
+            function speak(text, isInitialGreeting = false) {
                 if (synth.speaking) {
                     synth.cancel();
                 }
@@ -244,16 +245,29 @@
                 if (selectedVoice) {
                     utterance.voice = selectedVoice;
                 }
-                setTimeout(() => {
+                
+                // Only disable the button for bot responses, not the initial greeting
+                if (!isInitialGreeting) {
                     micButton.disabled = true;
-                    synth.speak(utterance);
-                }, 100);
+                }
+                synth.speak(utterance);
             }
 
             // --- 4. EVENT LISTENERS ---
             micButton.addEventListener('click', () => {
-                if (isListening) recognition.stop();
-                else recognition.start();
+                // Speak the initial greeting on the first click, then start listening
+                if (!initialGreetingSpoken) {
+                    const initialGreeting = document.querySelector('.bot-message').textContent;
+                    speak(initialGreeting, true);
+                    initialGreetingSpoken = true;
+                }
+
+                if (isListening) {
+                    recognition.stop();
+                } else {
+                    // Use a small delay to prevent the recognition from picking up the end of the bot's speech
+                    setTimeout(() => recognition.start(), 200);
+                }
             });
 
             recognition.onstart = () => {
@@ -282,17 +296,16 @@
             
             recognition.onerror = (event) => {
                 console.error('Speech recognition error:', event.error);
-                let errorMessage = "Oops, something went wrong.";
-                if (event.error === 'no-speech') errorMessage = "I didn't hear anything. Please try again.";
-                else if (event.error === 'not-allowed') errorMessage = "I need permission to use your microphone.";
+                let errorMessage = "Oops, something went wrong with the speech recognition.";
+                if (event.error === 'not-allowed') {
+                    // Provide a user-friendly message for permission errors
+                    errorMessage = "I can't hear you! Please allow microphone access in your browser settings and refresh the page.";
+                } else if (event.error === 'no-speech') {
+                    errorMessage = "I didn't hear anything. Please try again.";
+                }
                 addMessage(errorMessage, 'bot');
             };
 
-            // Initial bot greeting
-            setTimeout(() => {
-                const initialGreeting = document.querySelector('.bot-message').textContent;
-                speak(initialGreeting);
-            }, 500);
         });
 
         // --- 5. BOT RESPONSE LOGIC (ROBUST VERSION) ---
@@ -300,7 +313,6 @@
             const API_URL = 'https://talkbuddy-vzwv.onrender.com/ask';
 
             try {
-                console.log("Attempting to fetch from:", API_URL);
                 const response = await fetch(API_URL, {
                     method: 'POST',
                     headers: {
@@ -311,23 +323,15 @@
                     }),
                 });
 
-                // Check if the response was successful (status code 200-299)
                 if (response.ok) {
                     const data = await response.json();
-                    console.log("Received successful response:", data);
                     return data.reply;
                 } else {
-                    // If the response is not OK, handle it as an error
-                    console.error("Server responded with an error status:", response.status, response.statusText);
-                    // Try to get more specific error text from the response body
-                    const errorText = await response.text(); // Read as text first
-                    console.error("Error response body:", errorText);
-                    // Throw an error to be caught by the catch block
+                    const errorText = await response.text();
                     throw new Error(`Server Error: ${response.status} - ${errorText}`);
                 }
 
             } catch (error) {
-                // This will catch network errors or errors thrown from the try block
                 console.error("An error occurred in getBotResponse:", error);
                 return "Sorry, I'm having trouble connecting right now. Please check the console for details.";
             }
