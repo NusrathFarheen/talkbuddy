@@ -2,7 +2,7 @@
 
 TalkBuddy is an interactive web application designed to help users practice their communication and public speaking skills. It uses the Web Speech API for voice recognition and speech synthesis, and connects to the Google Gemini API for intelligent, conversational responses.
 
-### ✨ [Live Demo Link Will Go Here] ✨
+### ✨ https://nusrathfarheen.github.io/talkbuddy/ ✨
 
 ---
 
