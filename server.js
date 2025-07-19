@@ -13,7 +13,6 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Get Gemini API Key from environment variables
-// IMPORTANT: Create a .env file in your project root and add GEMINI_API_KEY=YOUR_API_KEY
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 if (!GEMINI_API_KEY) {
     console.error("FATAL ERROR: GEMINI_API_KEY is not defined in the .env file.");
@@ -21,52 +20,36 @@ if (!GEMINI_API_KEY) {
 }
 
 // --- 2. MIDDLEWARE ---
-
-// Enable Cross-Origin Resource Sharing (CORS) so your frontend can call the backend
 app.use(cors());
-// Enable Express to parse JSON request bodies
 app.use(express.json());
 
 // --- 3. GEMINI API CONFIGURATION ---
-
-// Initialize the Google Generative AI client
 const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
 const model = genAI.getGenerativeModel({ model: "gemini-pro" });
 
-// --- 4. API ENDPOINT ---
+// --- 4. API ENDPOINT (MODIFIED FOR TESTING) ---
 
-// Define a POST endpoint at /ask
-app.post('/ask', async (req, res) => {
-    // Get the user's message from the request body
-    const { message } = req.body;
-
-    // Basic validation: Check if a message was provided
-    if (!message) {
-        return res.status(400).json({ error: 'Message is required.' });
-    }
+// We are changing this from app.post to app.get to make it testable in the browser.
+app.get('/ask', async (req, res) => {
+    // For a GET test, we don't have a request body, so we'll use a hardcoded message.
+    const testMessage = "Hello"; 
 
     try {
-        // A simple prompt to guide the AI's personality
-        const prompt = `You are TalkBuddy, a friendly and encouraging AI for conversation practice. Keep your responses concise and engaging. User's message: "${message}"`;
-
-        // Call the Gemini API to generate content
+        const prompt = `You are TalkBuddy, a friendly AI. User's message: "${testMessage}"`;
         const result = await model.generateContent(prompt);
         const response = await result.response;
         const text = response.text();
 
-        // Send the AI's response back to the frontend
+        // Send a successful JSON response
         res.json({ reply: text });
 
     } catch (error) {
-        // Log the error and send a generic error message to the client
         console.error("Error calling Gemini API:", error);
         res.status(500).json({ error: 'Failed to get a response from the AI.' });
     }
 });
 
 // --- 5. START THE SERVER ---
-
-// Start listening for requests on the specified port
 app.listen(PORT, () => {
     console.log(`Server is running on http://localhost:${PORT}`);
 });
