@@ -7,16 +7,12 @@ const { GoogleGenerativeAI } = require('@google/generative-ai');
 require('dotenv').config(); // To load environment variables from a .env file
 
 // --- 1. INITIAL SETUP ---
-
-// Initialize Express app
 const app = express();
 const PORT = process.env.PORT || 3000;
-
-// Get Gemini API Key from environment variables
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 if (!GEMINI_API_KEY) {
     console.error("FATAL ERROR: GEMINI_API_KEY is not defined in the .env file.");
-    process.exit(1); // Exit the process if the key is not found
+    process.exit(1);
 }
 
 // --- 2. MIDDLEWARE ---
@@ -25,22 +21,21 @@ app.use(express.json());
 
 // --- 3. GEMINI API CONFIGURATION ---
 const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
-const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+// UPDATED MODEL NAME: Changed "gemini-pro" to the current standard "gemini-1.0-pro"
+const model = genAI.getGenerativeModel({ model: "gemini-1.0-pro" });
 
-// --- 4. API ENDPOINT (MODIFIED FOR TESTING) ---
-
-// We are changing this from app.post to app.get to make it testable in the browser.
-app.get('/ask', async (req, res) => {
-    // For a GET test, we don't have a request body, so we'll use a hardcoded message.
-    const testMessage = "Hello"; 
+// --- 4. API ENDPOINT (Back to POST) ---
+app.post('/ask', async (req, res) => {
+    const { message } = req.body;
+    if (!message) {
+        return res.status(400).json({ error: 'Message is required.' });
+    }
 
     try {
-        const prompt = `You are TalkBuddy, a friendly AI. User's message: "${testMessage}"`;
+        const prompt = `You are TalkBuddy, a friendly and encouraging AI for conversation practice. Keep your responses concise and engaging. User's message: "${message}"`;
         const result = await model.generateContent(prompt);
         const response = await result.response;
         const text = response.text();
-
-        // Send a successful JSON response
         res.json({ reply: text });
 
     } catch (error) {
