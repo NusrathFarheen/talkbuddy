@@ -225,39 +225,26 @@
                 }
                 chatWindow.appendChild(messageElement);
                 chatWindow.scrollTop = chatWindow.scrollHeight;
-                return messageElement; // Return the element to update it later
+                return messageElement;
             }
             
             function speak(text) {
-                // If the synthesizer is already speaking, cancel the current utterance.
                 if (synth.speaking) {
-                    console.log("Speech synthesis is speaking. Cancelling previous utterance.");
                     synth.cancel();
                 }
-
                 const utterance = new SpeechSynthesisUtterance(text);
-
-                // When speech ends, re-enable the microphone button
                 utterance.onend = () => {
                     micButton.disabled = false;
                 };
-
-                // Set up an error handler to log any issues and re-enable the button
                 utterance.onerror = (event) => {
                     console.error('SpeechSynthesisUtterance.onerror - Error Details:', event);
-                    micButton.disabled = false; // Ensure button is re-enabled on error
+                    micButton.disabled = false;
                 };
-
-                // Find a preferred, more natural-sounding voice.
                 const selectedVoice = voices.find(voice => voice.name === 'Google US English') || voices.find(voice => voice.lang === 'en-US');
                 if (selectedVoice) {
                     utterance.voice = selectedVoice;
                 }
-
-                // A small timeout helps ensure that the cancel command has time to process
-                // before the new speak command is issued, which can resolve race conditions.
                 setTimeout(() => {
-                    // Disable the mic button just before speaking to prevent interruptions
                     micButton.disabled = true;
                     synth.speak(utterance);
                 }, 100);
@@ -285,11 +272,9 @@
                 const transcript = event.results[0][0].transcript.trim();
                 if (transcript) {
                     addMessage(transcript, 'user');
-                    const loadingIndicator = addMessage('', 'bot', true); // Show loading indicator
-                    
+                    const loadingIndicator = addMessage('', 'bot', true);
                     const botResponse = await getBotResponse(transcript);
-                    
-                    loadingIndicator.remove(); // Remove loading indicator
+                    loadingIndicator.remove();
                     addMessage(botResponse, 'bot');
                     speak(botResponse);
                 }
@@ -312,8 +297,10 @@
 
         // --- 5. BOT RESPONSE LOGIC (CALLS YOUR BACKEND) ---
         async function getBotResponse(userInput) {
-            // The URL of your Node.js server endpoint
-            const API_URL = https://talkbuddy-vzwv.onrender.com
+            // =================================================================
+            // === IMPORTANT: PASTE YOUR LIVE RENDER URL IN THE LINE BELOW ===
+            // =================================================================
+            const API_URL = 'https://talkbuddy-vzwv.onrender.com';
 
             try {
                 const response = await fetch(API_URL, {
@@ -327,17 +314,16 @@
                 });
 
                 if (!response.ok) {
-                    // Handle server errors (e.g., 500 Internal Server Error)
                     const errData = await response.json();
                     throw new Error(errData.error || `Server error: ${response.status}`);
                 }
                 
                 const data = await response.json();
-                return data.reply; // The backend sends a JSON with a 'reply' key
+                return data.reply;
 
             } catch (error) {
                 console.error("Error calling backend:", error);
-                return "I'm having trouble connecting. Please make sure the server is running.";
+                return "I'm having trouble connecting. Please check the server and the console for errors.";
             }
         }
     </script>
